@@ -35,4 +35,4 @@ The only third party AudioLift talks to is **Polar.sh**, and only for the licens
 
 ## 7. Contact
 
-If you have any questions about this policy, you may contact the developer via the links provided in the extension's interface.
+Questions about this policy: support@lobtailstudio.com. Support and FAQ: https://lobtailstudio.com/audiolift/support
