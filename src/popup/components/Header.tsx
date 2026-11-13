@@ -32,10 +32,11 @@ const Header: React.FC<HeaderProps> = ({ enabled, onToggle }) => {
     <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-bg-primary flex-shrink-0 select-none">
       <div className="flex items-center gap-3">
         <div className="flex items-center">
-          <img 
-            src="/logo.png" 
-            alt="AudioLift" 
-            className="logo-fixed block object-contain filter dark:brightness-0 dark:invert" 
+          <img
+            src="/logo.png"
+            alt="AudioLift"
+            className="logo-fixed block object-contain"
+            style={{ filter: 'var(--logo-filter)' }}
           />
         </div>
       </div>

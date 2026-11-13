@@ -15,6 +15,7 @@
   --accent-dark: #174ea6;
   --accent-bg: #e8f0fe;
   --shadow: rgba(0, 0, 0, 0.1);
+  --logo-filter: none;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,9 +32,14 @@
     --accent-dark: #aecbfa;
     --accent-bg: #1a3a52;
     --shadow: rgba(0, 0, 0, 0.3);
+    --logo-filter: brightness(0) invert(1);
   }
 }
 
+/* .dark-mode / .light-mode are an explicit user choice (Header's theme
+   cycle button) and must win over the OS-level `prefers-color-scheme`
+   media query above — including for --logo-filter, which the media query
+   alone can't reach once a class is set. */
 body.dark-mode {
   --bg-primary: #202124;
   --bg-secondary: #292a2d;
@@ -47,6 +53,7 @@ body.dark-mode {
   --accent-dark: #aecbfa;
   --accent-bg: #1a3a52;
   --shadow: rgba(0, 0, 0, 0.3);
+  --logo-filter: brightness(0) invert(1);
 }
 
 body.light-mode {
@@ -62,6 +69,7 @@ body.light-mode {
   --accent-dark: #174ea6;
   --accent-bg: #e8f0fe;
   --shadow: rgba(0, 0, 0, 0.1);
+  --logo-filter: none;
 }
 
 body {

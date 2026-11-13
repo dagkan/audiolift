@@ -49,6 +49,8 @@ class AudioLift implements AudioLiftInstance {
   processedElements: WeakSet<HTMLMediaElement> = new WeakSet();
   observer: MutationObserver | null = null;
   settings: AudioLiftSettings = { ...defaultSettings };
+  /** Pro entitlement, mirrored from chrome.storage.local — see ../license.ts */
+  proActive = false;
 
   constructor() {
     this.init();
@@ -59,7 +61,7 @@ class AudioLift implements AudioLiftInstance {
       this.observer.disconnect();
       this.observer = null;
     }
-    
+
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
@@ -82,25 +84,42 @@ class AudioLift implements AudioLiftInstance {
       return;
     }
 
-    console.log('AudioLift: Content script started on', window.location.hostname);
-    
     this.loadSettings();
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message.type === 'updateSettings') {
-        console.log('AudioLift: Received settings update:', message.settings);
+        const wasEnabled = this.settings.enabled;
         this.settings = { ...this.settings, ...message.settings };
         this.updateAllSources();
+        // Only start capturing media once the user actually enables AudioLift.
+        // Web Audio's createMediaElementSource() permanently reroutes an
+        // element's output through the graph — doing that unconditionally
+        // (even while "disabled") risks silencing cross-origin media that
+        // isn't served with CORS headers, for no benefit while off.
+        if (!wasEnabled && this.settings.enabled) {
+          this.scanForMedia();
+        }
         sendResponse({ success: true });
       } else if (message.type === 'getAudioInfo') {
         sendResponse({ audioInfo: this.getAudioInfo() });
-      } else if (message.type === 'getStatus') {
-        sendResponse({ enabled: this.settings.enabled });
       }
       return true;
     });
 
-    this.scanForMedia();
+    // Multi-tab / side-panel sync: react to settings or license changes made
+    // from any other context (popup, side panel, keyboard shortcut).
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local') return;
+      if (changes.proActive) {
+        this.proActive = !!changes.proActive.newValue;
+        this.updateAllSources();
+      }
+      const domain = window.location.hostname;
+      if (changes[`domainSettings_${domain}`] || changes.globalSettings) {
+        this.loadSettings();
+      }
+    });
+
     this.observeDOM();
   }
 
@@ -115,17 +134,22 @@ class AudioLift implements AudioLiftInstance {
 
       const result = await chrome.storage.local.get([
         'globalSettings',
-        `domainSettings_${domain}`
+        `domainSettings_${domain}`,
+        'proActive'
       ]);
 
+      const wasEnabled = this.settings.enabled;
       this.settings = {
         ...this.settings,
         ...result.globalSettings,
         ...result[`domainSettings_${domain}`]
       };
+      this.proActive = !!result.proActive;
 
       if (this.settings.enabled) {
         this.scanForMedia();
+      } else if (wasEnabled) {
+        this.updateAllSources();
       }
     } catch (error) {
       console.warn('AudioLift: Error loading settings:', error);
@@ -133,6 +157,7 @@ class AudioLift implements AudioLiftInstance {
   }
 
   scanForMedia() {
+    if (!this.settings.enabled) return;
     const mediaElements = document.querySelectorAll<HTMLMediaElement>('video, audio');
     mediaElements.forEach(el => this.processMediaElement(el));
   }
@@ -141,6 +166,10 @@ class AudioLift implements AudioLiftInstance {
     if (!document.body) return;
 
     this.observer = new MutationObserver((mutations) => {
+      // Don't route newly-added media into the Web Audio graph while
+      // AudioLift is off for this site (see start()'s updateSettings comment).
+      if (!this.settings.enabled) return;
+
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === 1) { // ELEMENT_NODE
@@ -203,33 +232,10 @@ class AudioLift implements AudioLiftInstance {
     if (this.processedElements.has(mediaElement)) return;
     this.processedElements.add(mediaElement);
 
-    console.log('AudioLift: Found new media element', mediaElement);
-
     const setupAudio = () => {
       if (!document.contains(mediaElement)) return;
 
-      // CORS Fix: Required for Web Audio API to work with cross-origin sources (e.g., YouTube)
-      // Without this, the AudioContext may output silence (tainted).
-      if (!mediaElement.crossOrigin && mediaElement.src && !mediaElement.src.startsWith('blob:') && !mediaElement.src.startsWith('data:')) {
-        // We only set this for actual URLs. blobs often fail if modified.
-        // WARNING: This forces a reload of the media element.
-        try {
-          const wasPaused = mediaElement.paused;
-          // const currentTime = mediaElement.currentTime; // Unused
-          mediaElement.crossOrigin = "anonymous";
-          // We might need to reload, but usually setting the attribute is enough to trigger a fetch check on next play
-          // However, for already playing media, we might need to force a quick reload if it stops.
-          if (!wasPaused) {
-             // Some browsers require a re-load call
-             // mediaElement.load(); // This is too disruptive, let's try just setting it.
-          }
-        } catch (e) {
-          console.warn('AudioLift: Failed to set crossOrigin', e);
-        }
-      }
-
       try {
-        console.log('AudioLift: Setting up audio graph for', mediaElement);
         if (!this.audioContext) {
           this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -239,10 +245,9 @@ class AudioLift implements AudioLiftInstance {
           source = this.audioContext.createMediaElementSource(mediaElement);
         } catch (e: any) {
           if (e.name === 'InvalidStateError') {
-            console.warn('AudioLift: Element already connected. Skipping.');
-            // Even if connected, we might have lost our reference.
-            // But we can't reconnect it.
-            return; 
+            // Element is already routed into a Web Audio graph (ours from a
+            // prior injection, or another extension's) — can't reconnect it.
+            return;
           }
           throw e;
         }
@@ -288,15 +293,22 @@ class AudioLift implements AudioLiftInstance {
       nodes.monoNode.channelCount = 2;
       nodes.monoNode.channelCountMode = 'max';
       nodes.preamp.gain.value = 1;
-      
+
       const filters = [nodes.eq32, nodes.eq64, nodes.eq125, nodes.eq250, nodes.eq500,
        nodes.eq1k, nodes.eq2k, nodes.eq4k, nodes.eq8k, nodes.eq16k];
       filters.forEach(n => n.gain.value = 0);
-      
+
       nodes.compressor.threshold.value = -24;
       nodes.compressor.ratio.value = 1;
       return;
     }
+
+    // Smart Volume / Loudness Mode are Pro features. Settings may still carry
+    // a stale `true` from before a license lapsed — enforce the entitlement
+    // here, at the point they actually take effect, rather than trusting the
+    // stored flags (single source of truth, mirrors Mailskin's applyProGate).
+    const smartVolume = this.settings.smartVolume && this.proActive;
+    const loudnessMode = this.settings.loudnessMode && this.proActive;
 
     // Mono
     if (this.settings.mono) {
@@ -309,15 +321,15 @@ class AudioLift implements AudioLiftInstance {
 
     // Preamp
     let finalPreamp = this.settings.preamp;
-    if (this.settings.smartVolume) {
+    if (smartVolume) {
       finalPreamp += 4;
-    } else if (this.settings.loudnessMode) {
+    } else if (loudnessMode) {
       finalPreamp += 3;
     }
     nodes.preamp.gain.value = this.dbToGain(finalPreamp);
 
     // EQ
-    if (this.settings.loudnessMode) {
+    if (loudnessMode) {
       nodes.eq32.gain.value = 6;
       nodes.eq64.gain.value = 4;
       nodes.eq125.gain.value = 2;
@@ -342,7 +354,7 @@ class AudioLift implements AudioLiftInstance {
     }
 
     // Compressor
-    if (this.settings.smartVolume) {
+    if (smartVolume) {
       nodes.compressor.threshold.value = -35;
       nodes.compressor.ratio.value = 8;
       nodes.compressor.knee.value = 10;
@@ -360,7 +372,13 @@ class AudioLift implements AudioLiftInstance {
   updateAllSources() {
     for (const [mediaElement, data] of this.audioSources.entries()) {
       if (!mediaElement.isConnected) {
+        // Element left the DOM (e.g. SPA navigation reusing/discarding
+        // players) — release the graph and forget it, so if an element with
+        // the same identity reappears later it can be processed fresh
+        // instead of being silently skipped as "already handled".
+        data.source.disconnect();
         this.audioSources.delete(mediaElement);
+        this.processedElements.delete(mediaElement);
         continue;
       }
       if (data && data.nodes) {

@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioLiftSettings, defaultSettings, AudioInfo } from '../../types';
+import { LicenseActivateResult, LicenseStorageState } from '../../license';
 
 export const useAudioSettings = () => {
   const [settings, setSettings] = useState<AudioLiftSettings>(defaultSettings);
@@ -14,6 +15,10 @@ export const useAudioSettings = () => {
     duration: null
   });
   const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [proActive, setProActive] = useState(false);
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStorageState['licenseStatus']>(null);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   // Load initial state and listen for tab changes
   useEffect(() => {
@@ -37,7 +42,9 @@ export const useAudioSettings = () => {
         const result = await chrome.storage.local.get([
           'globalSettings',
           `domainSettings_${currentDomain}`,
-          `domainPreset_${currentDomain}`
+          `domainPreset_${currentDomain}`,
+          'proActive',
+          'licenseStatus'
         ]);
 
         const mergedSettings = {
@@ -48,6 +55,8 @@ export const useAudioSettings = () => {
 
         setSettings(mergedSettings);
         setActivePreset(result[`domainPreset_${currentDomain}`] || null);
+        setProActive(!!result.proActive);
+        setLicenseStatus(result.licenseStatus || null);
       }
     };
 
@@ -70,37 +79,47 @@ export const useAudioSettings = () => {
     };
     chrome.tabs.onUpdated.addListener(onUpdated);
 
+    // Cross-context sync: pick up changes made by the keyboard shortcut, the
+    // side panel (if a popup is also open), or a license activation/removal —
+    // without waiting for a tab-switch event to re-trigger the query above.
+    const onStorageChanged = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
+      if (area !== 'local') return;
+      if ('proActive' in changes) setProActive(!!changes.proActive.newValue);
+      if ('licenseStatus' in changes) setLicenseStatus(changes.licenseStatus.newValue ?? null);
+    };
+    chrome.storage.onChanged.addListener(onStorageChanged);
+
     return () => {
       chrome.tabs.onActivated.removeListener(onActivated);
       chrome.tabs.onUpdated.removeListener(onUpdated);
+      chrome.storage.onChanged.removeListener(onStorageChanged);
     };
   }, []);
 
   // Sync to Content Script & Storage
-  const updateSettings = useCallback(async (newSettings: Partial<AudioLiftSettings>) => {
-    setSettings(prev => {
-      const updated = { ...prev, ...newSettings };
-      
-      // Persist to storage (debounced ideally, but direct for now is fine for local state)
+  const updateSettings = useCallback((newSettings: Partial<AudioLiftSettings>, opts?: { fromPreset?: boolean }) => {
+    const updated = { ...settingsRef.current, ...newSettings };
+    setSettings(updated);
+
+    if (!opts?.fromPreset) {
+      // A manual tweak no longer matches the preset that was last applied.
+      setActivePreset(null);
       if (domain !== 'unknown') {
-        chrome.storage.local.set({
-          [`domainSettings_${domain}`]: updated,
-          globalSettings: updated // Optional: decide if global should track local
-        });
+        chrome.storage.local.remove(`domainPreset_${domain}`);
       }
+    }
 
-      // Send to Tab
-      if (tabId) {
-        chrome.tabs.sendMessage(tabId, {
-          type: 'updateSettings',
-          settings: updated
-        }).catch(() => {
-          // Tab might be closed or restricted
-        });
-      }
-
-      return updated;
-    });
+    // Per-site only: writing this into `globalSettings` too (as earlier
+    // versions did) meant every never-visited site silently inherited
+    // whatever site was edited last, defeating "Per-Site Memory".
+    if (domain !== 'unknown') {
+      chrome.storage.local.set({ [`domainSettings_${domain}`]: updated });
+    }
+    if (tabId) {
+      chrome.tabs.sendMessage(tabId, { type: 'updateSettings', settings: updated }).catch(() => {
+        // Tab might be closed or restricted
+      });
+    }
   }, [domain, tabId]);
 
   // Apply Preset
@@ -109,7 +128,7 @@ export const useAudioSettings = () => {
     if (domain !== 'unknown') {
       await chrome.storage.local.set({ [`domainPreset_${domain}`]: presetName });
     }
-    updateSettings(presetSettings);
+    updateSettings(presetSettings, { fromPreset: true });
   }, [domain, updateSettings]);
 
   // Poll Audio Info
@@ -133,12 +152,24 @@ export const useAudioSettings = () => {
     return () => clearInterval(interval);
   }, [tabId]);
 
+  const activateLicense = useCallback((key: string): Promise<LicenseActivateResult> => {
+    return chrome.runtime.sendMessage({ type: 'activateLicense', key });
+  }, []);
+
+  const removeLicense = useCallback((): Promise<void> => {
+    return chrome.runtime.sendMessage({ type: 'removeLicense' }).then(() => undefined);
+  }, []);
+
   return {
     settings,
     updateSettings,
     audioInfo,
     activePreset,
     applyPreset,
-    domain
+    domain,
+    proActive,
+    licenseStatus,
+    activateLicense,
+    removeLicense
   };
 };

@@ -5,6 +5,27 @@ All notable changes to AudioLift will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-09-02
+
+### Added
+- **AudioLift Pro** — optional paid upgrade via Polar.sh license keys. Unlocks all 20 presets (5 stay free), Smart Volume, and Loudness Mode. $2.99/month (7-day free trial) or $19.99/year.
+- License panel in the popup/side panel: activate/remove a key, see Pro status, buy links.
+- Locked presets and Pro tools show a lock icon and link to the license panel instead of silently doing nothing.
+
+### Fixed
+- **Audio could go silent when switching tabs.** The background service worker was re-injecting the content script into every open tab on every wake (not just on install/update), which tore down and rebuilt any tab's already-running `AudioContext`. Re-injection now only happens on install/update, into tabs open from before.
+- **Per-site settings were leaking into other sites.** Every settings change was also being written into the global fallback used by sites you hadn't customized yet, so whichever site you edited last silently became every new site's starting point. Per-site settings are now only written per-site.
+- AudioLift no longer builds a Web Audio graph for a page's media while it's toggled off for that site — it only connects once you actually enable it, reducing the risk of silencing cross-origin media that isn't served with CORS headers.
+- Manually adjusting the EQ or compressor after applying a preset now correctly clears the active-preset highlight (it used to stay lit and out of sync with your actual settings).
+- A disconnected media element (e.g. after an SPA swaps out its player) is now released instead of permanently marked "already handled," so it can be picked up again if it returns to the page.
+- Removed a dead "CORS fix" code path that set `crossOrigin` too late to have any effect.
+- Removed unused message handlers (`getTabId`, `getStatus`) and a dead `chrome://` URL filter.
+- Fixed the AudioLift logo going invisible when the in-app theme toggle (☀️/🌙) was set opposite to the OS theme.
+- Removed the `activeTab` permission (redundant next to the existing `<all_urls>` host permission).
+
+### Changed
+- Corrected store listing, README, and privacy policy: earlier docs described a Spectrum Analyzer, custom preset saving, and an "Advanced Features" panel that don't exist in the current TypeScript/React build. Removed those claims and the screenshot depicting the spectrum analyzer.
+
 ## [2.2.0] - 2025-10-26
 
 ### Changed - BREAKING

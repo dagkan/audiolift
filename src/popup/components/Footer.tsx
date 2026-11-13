@@ -7,11 +7,9 @@ const Footer: React.FC = () => {
         Settings auto-saved per site
       </div>
       <div className="flex items-center justify-center gap-2 text-[10px]">
-        <a href="https://daiquiri.dev" target="_blank" className="text-accent no-underline inline-flex items-center gap-1 font-medium hover:text-accent-dark hover:underline" title="Website">🌐 daiquiri.dev</a>
+        <a href="https://daiquiri.dev" target="_blank" rel="noopener noreferrer" className="text-accent no-underline inline-flex items-center gap-1 font-medium hover:text-accent-dark hover:underline" title="Website">🌐 daiquiri.dev</a>
         <span className="text-border-secondary text-[8px]">•</span>
-        <a href="https://github.daiquiri.dev" target="_blank" className="text-accent no-underline inline-flex items-center gap-1 font-medium hover:text-accent-dark hover:underline" title="GitHub">💖 GitHub</a>
-        <span className="text-border-secondary text-[8px]">•</span>
-        <a href="https://bmc.daiquiri.dev" target="_blank" className="text-accent no-underline inline-flex items-center gap-1 font-medium hover:text-accent-dark hover:underline" title="Buy me a coffee">☕ Coffee</a>
+        <a href="https://github.com/lobtailstudio" target="_blank" rel="noopener noreferrer" className="text-accent no-underline inline-flex items-center gap-1 font-medium hover:text-accent-dark hover:underline" title="GitHub">💖 GitHub</a>
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
 {
-  "name": "audio-lift-modern",
+  "name": "audiolift",
   "private": true,
-  "version": "2.2.1",
+  "version": "2.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "package": "node scripts/build.js",
     "preview": "vite preview"
   },
   "dependencies": {

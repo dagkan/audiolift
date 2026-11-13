@@ -6,109 +6,56 @@ AudioLift is a Chrome extension that provides professional-grade audio enhanceme
 
 ## Features
 
-### Audio Enhancement
+### Audio Enhancement (Free)
 - **10-Band Parametric Equalizer**: Professional-grade frequency control (±12dB per band)
   - 32Hz, 64Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz
   - Optimized filter types (lowshelf, peaking, highshelf)
-  - Precise audio sculpting for any content type
-- **Spectrum Analyzer**: Real-time visual frequency display (512 FFT, 20fps)
 - **Preamp/Gain**: Boost overall volume up to +10dB
 - **Dynamic Range Compression**: Reduce the difference between quiet and loud sounds
   - Adjustable threshold, ratio, and knee
   - Perfect for movies with quiet dialogue and loud action scenes
+- **Mono**: Merge stereo to mono
 - **Real-time Processing**: Zero latency audio enhancement using Web Audio API
-- **Audio Information Display**: Compact real-time metadata panel showing:
-  - Sample rate (e.g., 48.0k Hz)
-  - Channel configuration (Mono/Stereo)
-  - Bit depth (16-bit/24-bit, estimated from codec)
-  - Codec (MP3, AAC, Opus, Vorbis, FLAC, etc.)
-  - Bitrate estimation
-  - Duration (mm:ss format)
+- **Audio Information Display**: Sample rate, channels, bit depth, codec, bitrate, duration
+- **Per-Site Memory**: Settings save automatically per domain, no button to click
 
-### Presets (20 Available)
+### Presets — 5 free, 15 with Pro
+- **Free**: Flat, Movie, Music, Podcast, Bass+
+- **Pro**: Dialogue, Cinematic, Night, Rock, Classical, Jazz, Electronic, Hip Hop, Metal, Acoustic, Podcast Radio, Vocal, Gaming, Lo-Fi, Audiophile
 
-**Neutral & Reference:**
-- **Flat** - No processing, neutral sound
-- **Audiophile** - Subtle enhancement for critical listening
-
-**Movies & TV:**
-- **Movie** - Enhanced bass/treble, moderate compression
-- **Dialogue** - Boosted mids, aggressive compression for voices
-- **Cinematic** - Wide soundstage for immersive films
-- **Night** - Heavy compression for late-night viewing
-
-**Music Genres:**
-- **Music** - Balanced enhancement for general music
-- **Rock** - Heavy bass and treble for rock music
-- **Classical** - Natural, gentle sound for orchestral
-- **Jazz** - Warm, balanced for jazz
-- **Electronic** - Heavy bass + treble for EDM
-- **Hip Hop** - Maximum bass with compression
-- **Metal** - Aggressive bass and treble
-- **Acoustic** - Natural sound, minimal processing
-- **Lo-Fi** - Warm sound with reduced treble
-
-**Speech & Content:**
-- **Podcast** - Speech optimized with compression
-- **Radio** - Heavily compressed for radio-style sound
-- **Vocal** - Extreme mid boost for vocals
-
-**Gaming & Bass:**
-- **Gaming** - Immersive with heavy bass
-- **Bass+** - Maximum bass boost
-
-### Smart Settings
-- **Per-Site Memory**: Automatically saves settings for each website
-- **Global Defaults**: Set default settings for all sites
-- **Tab-Specific**: Different settings for different tabs
-- **Persistent**: Settings saved across browser sessions
+### AudioLift Pro
+- **All 20 presets**
+- **Smart Volume**: One-tap automatic loudness normalization
+- **Loudness Mode**: One-tap bass/treble + dialogue boost
+- **$2.99/month** (7-day free trial) or **$19.99/year** (save ~44%)
+- Activated with a license key from [Polar.sh](https://polar.sh) — no account, no login. AudioLift has no backend of its own; the license key is checked directly against Polar's API. See [PRIVACY.md](./PRIVACY.md) for exactly what that sends.
 
 ### User Experience
-- **Ultra-Compact UI**: Chrome minimal design, 30-40% less space
-- **Side Panel Support**: Open in Chrome sidebar for persistent access
+- **Ultra-Compact UI**: Chrome minimal design
+- **Side Panel Support**: Open in Chrome's sidebar for persistent access
 - **Keyboard Shortcut**: Toggle on/off with `Cmd+Shift+A` (Mac) or `Ctrl+Shift+A` (Windows)
-- **Visual Feedback**: Badge indicator shows when active
-- **Real-time Values**: See exact values as you adjust
-- **Minimal Scrolling**: All controls visible without scrolling
 
 ## Installation
 
-### From Source
+### From the Chrome Web Store
+Coming soon — see [`chrome-web-store/`](./chrome-web-store) for submission status.
 
-1. Clone or download this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked"
-5. Select the `extension` folder in the `AudioLift` directory
+### From Source
+1. Clone this repository and run `npm install`
+2. Run `npm run build` — this produces a `dist/` folder
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" in the top right
+5. Click "Load unpacked" and select the `dist/` folder
 
 ## Usage
 
-### Quick Start
-
-1. Click the AudioLift icon in your browser toolbar
-2. Toggle "Enable AudioLift" on
+1. Click the AudioLift icon in your browser toolbar (or right-click it to open the side panel)
+2. Toggle it on
 3. Navigate to a video or audio page (e.g., YouTube, Netflix, Plex)
-4. Adjust settings to your preference
-5. Click "Save for this Site" to remember settings
+4. Adjust settings, or pick a preset — everything saves automatically for that site
+5. Optional: activate a Pro license key at the bottom of the panel to unlock all 20 presets, Smart Volume, and Loudness Mode
 
-### Presets
-
-Click any preset button to apply predefined settings:
-
-- **Movie**: Great for films with quiet dialogue
-- **Dialogue**: Boost conversations in podcasts or videos
-- **Bass Boost**: Enhance music and sound effects
-- **Flat**: Reset to neutral (no processing)
-
-### Custom Settings
-
-#### Preamp
-Overall volume boost. Useful when content is generally too quiet.
-- Range: -10dB to +10dB
-- Tip: Start with +2-4dB for movies
-
-#### 10-Band Equalizer
-Professional parametric EQ with 10 frequency bands:
+### 10-Band Equalizer
 
 - **32 Hz** (Lowshelf): Sub-bass, rumble, deep impact
 - **64 Hz**: Bass fundamentals, kick drums
@@ -121,32 +68,13 @@ Professional parametric EQ with 10 frequency bands:
 - **8 kHz**: Brilliance, air
 - **16 kHz** (Highshelf): Ultra-high frequencies, sparkle
 
-Each band: -12dB to +12dB range
+Each band: -12dB to +12dB range.
 
-#### Dynamic Range Compression
+### Dynamic Range Compression
 
-Advanced controls to reduce the difference between quiet and loud sounds:
-
-- **Threshold**: Level above which compression starts (default: -24dB)
-  - Lower = more compression
-  - Try -35dB for heavy compression (dialogue preset)
-
-- **Ratio**: How much to compress (default: 3:1)
-  - Higher = more aggressive compression
-  - Try 6:1 for dialogue, 3-4:1 for movies
-
-- **Knee**: How smoothly compression engages (default: 30dB)
-  - Higher = smoother, more natural
-  - Lower = more aggressive
-
-### Keyboard Shortcuts
-
-- `Cmd+Shift+A` (Mac) or `Ctrl+Shift+A` (Windows): Toggle AudioLift on/off
-
-### Saving Settings
-
-- **Save for this Site**: Remembers settings for the current domain (e.g., youtube.com)
-- **Save as Default**: Sets global default settings for all sites
+- **Threshold**: Level above which compression starts (default: -24dB). Lower = more compression.
+- **Ratio**: How much to compress (default: 3:1). Higher = more aggressive.
+- **Knee**: How smoothly compression engages (default: 30dB). Higher = smoother.
 
 ## Technical Details
 
@@ -154,110 +82,69 @@ Advanced controls to reduce the difference between quiet and loud sounds:
 
 AudioLift uses the Web Audio API to process audio in real-time:
 
-1. Detects all `<audio>` and `<video>` elements on the page
-2. Creates an audio processing chain:
-   - Source → Preamp → 10 EQ Filters → Compressor → Analyser → Output
-   - 10-band EQ: 32Hz → 64Hz → 125Hz → 250Hz → 500Hz → 1kHz → 2kHz → 4kHz → 8kHz → 16kHz
-3. Uses BiquadFilterNode for EQ (lowshelf, peaking, highshelf)
-4. Uses DynamicsCompressorNode for compression
-5. Uses AnalyserNode for spectrum visualization
-6. All processing happens in real-time with zero latency
+1. When you enable it for a site, it detects `<audio>`/`<video>` elements on the page and routes each one through a processing chain: `Source → Mono → Preamp → 10 EQ Filters → Compressor → Output`.
+2. Uses `BiquadFilterNode` for EQ (lowshelf, peaking, highshelf) and `DynamicsCompressorNode` for compression.
+3. AudioLift stays out of the way entirely until you turn it on for a site — it doesn't touch a page's audio graph while disabled.
 
 ### Browser Compatibility
-
-- Chrome 88+
-- Edge 88+
-- Any Chromium-based browser with Manifest V3 support
-
-### Performance
-
-- Minimal CPU usage (< 1% on modern hardware)
-- Zero latency audio processing
-- No impact on video playback
+Chrome 88+, Edge 88+, or any Chromium-based browser with Manifest V3 support.
 
 ## Troubleshooting
 
 ### Audio not working?
-- Refresh the page after enabling AudioLift
-- Some sites may load media dynamically - try toggling off/on
-- Check that media is actually playing
+- Refresh the page after enabling AudioLift for that site
+- Some sites load media dynamically — try toggling off/on
+- Web Audio can silence audio from sites that don't serve media with CORS headers; AudioLift only connects to media once you enable it, to minimize this risk, but it can't fully eliminate it for every site
 
 ### Distorted audio?
 - Lower the Preamp setting
 - Reduce EQ boost values
-- Decrease compression ratio
-
-### Settings not saving?
-- Make sure you click "Save for this Site" or "Save as Default"
-- Check Chrome's storage permissions
+- Decrease the compression ratio
 
 ## Development
 
 ### Project Structure
 
 ```
-AudioLift/
-├── extension/            # Extension source code (Manifest V3)
-│   ├── manifest.json     # Extension manifest
-│   ├── popup.html       # UI markup
-│   ├── popup.js         # UI logic and settings
-│   ├── styles.css       # UI styling
-│   ├── content-script.js # Audio processing (Web Audio API)
-│   └── background.js    # Service worker
-└── README.md             # This file
+browser-audiolift/
+├── manifest.json          # Extension manifest (MV3)
+├── src/
+│   ├── background/        # Service worker: badge, keyboard shortcut, Polar license calls
+│   ├── content/            # Injected into pages: builds the Web Audio graph
+│   ├── license.ts          # Shared Polar license config/types
+│   ├── types.ts             # AudioLiftSettings + defaults
+│   └── popup/                # React UI (used for both the popup and the side panel)
+│       ├── components/
+│       ├── hooks/useAudioSettings.ts
+│       └── presets.ts
+├── chrome-web-store/       # Store listing copy, screenshots, privacy policy, submission guide
+└── scripts/build.js        # Builds + zips a Chrome Web Store package
 ```
 
-### Building
+### Stack
+TypeScript + React 18 + Vite + `@crxjs/vite-plugin` + Tailwind CSS.
 
-No build process required - this is vanilla JavaScript.
+### Building
+```bash
+npm install
+npm run build      # tsc + vite build → dist/
+npm run package     # build + zip into chrome-web-store/AudioLift-v<version>.zip
+```
 
 ### Testing
-
-1. Load the extension in Developer mode
+1. `npm run build`, then load `dist/` as an unpacked extension
 2. Navigate to any page with audio/video
 3. Open DevTools console to see any errors
 4. Test on multiple sites (YouTube, Netflix, Plex, etc.)
 
 ## Privacy
 
-AudioLift:
-- Does NOT collect any data
-- Does NOT send any information to external servers
-- Does NOT track your browsing
-- Only stores your settings locally in Chrome's storage
-
-All audio processing happens locally in your browser.
-
-## Contributing
-
-Contributions welcome! Please feel free to submit issues or pull requests.
+See [PRIVACY.md](./PRIVACY.md). Short version: AudioLift collects nothing and talks to no server, except your own license key going to Polar.sh if you activate Pro.
 
 ## License
 
-MIT License - feel free to use and modify.
+MIT License for the extension's code. AudioLift Pro is a paid upgrade — see above.
 
-## Version
+## Changelog
 
-Current version: 2.2.1
-
-## What's New in 2.2
-
-- **10-Band Parametric EQ** - Upgraded from 3-band to professional 10-band equalizer
-- **Spectrum Analyzer** - Real-time visual frequency display with dark mode support
-- **Custom Presets** - Save and load your favorite settings (side panel only)
-- **Advanced Features Panel** - Dedicated side panel for power users
-- All 20 presets updated with 10-band frequency tuning
-
-## What's New in 2.1
-
-- **Ultra-Compact UI** - 30-40% less vertical space, minimal scrolling
-- **Bit Depth Display** - See audio bit depth (16-bit/24-bit)
-- **Side Panel Support** - Open in Chrome sidebar for persistent access
-- **Rounded Corners** - Polished look with border-radius
-
-## What's New in 2.0
-
-- **Chrome Minimal Design** - Clean, flat UI inspired by Chrome's Material Design
-- **Audio Information Display** - Real-time codec, bitrate, sample rate, and channel info
-- **20 Presets** - Expanded from 12 to 20 including Electronic, Hip Hop, Metal, Vocal, Cinematic, Radio, and Lo-Fi
-- **Smaller Footprint** - Reduced popup width (360px) for less screen space
+See [CHANGELOG.md](./CHANGELOG.md).
